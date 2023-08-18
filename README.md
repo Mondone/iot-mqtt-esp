@@ -56,7 +56,6 @@ Armar un despliegue declarativo (con docker-compose) llamado docker-compose.yaml
 
 ## Utilizacion
 
-Los pasos realizados por la persona evaluadora serán los siguientes
 
 1. Clonar el repositorio git clone `REPO URL`
 
