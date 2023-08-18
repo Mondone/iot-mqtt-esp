@@ -60,13 +60,17 @@ Los pasos realizados por la persona evaluadora serán los siguientes
 
 1. Clonar el repositorio git clone `REPO URL`
 
-2. Posicionarse en el directorio del repositorio y ejecutar el comando `docker-compose --project-name iot up -d`
+1. Posicionarse dentro del directorio del repositorio y ejecutar el comando `docker-compose --project-name iot up -d`
 
-3. Ingresar a Grafana en http://iot.localdev.me/ usuario `admin` password `admin123`
+1. Esperar que todos los servicios esten levantado (al principio puede tardar un poco)
+![Grafana login](./doc/docker_desktop_compose.png)
+
+1. Ingresar a Grafana en http://iot.localdev.me/ usuario `admin` password `admin123`
 ![Grafana login](./doc/grafana_login.png)
 
-4. En Grafana ingresar item del menu dashboard al item `General / Mi casa`
+1. En Grafana ingresar item del menu dashboard al item `General / Mi casa`
 ![Grafana dashboard](./doc/grafana_dashboard.png)
 ![Grafana iot dashboard](./doc/grafana_iot_dashboard.png)
 
+Para bajar todos los servicios ejecutar `docker-compose --project-name iot kill` dentro del directorio del repositorio
 
