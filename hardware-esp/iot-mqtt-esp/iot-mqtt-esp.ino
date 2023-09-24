@@ -3,6 +3,11 @@
 #include <PubSubClient.h>
 #include <SPIFFS.h>
 #include <ArduinoJson.h>
+#include <HTTPClient.h>
+#include <ESP32httpUpdate.h>
+
+#define FIRMWARE_VERSION 1.0
+#define UPDATE_URL "https://mondone.github.io/mqtt-firmware/firmware.json"
 
 // Conectar al wifi "ESP32-Web-Config" y posterior ingresar a 192.168.4.1 para configurar el esp32. 
 char webpage[] PROGMEM = R"=====(
@@ -108,6 +113,7 @@ void reconnect();
 void getConfig();
 void serverGet();
 void serverPost();
+void checkUpdate();
 
 void setup() {
 
@@ -129,6 +135,9 @@ void setup() {
 
   // Obtenet la informacion en la memoria SPIFFS
   getConfig();
+
+  // Informar version de firmware en el setup
+  Serial.println("Setup Firmware version: " + String(FIRMWARE_VERSION));
   
 }
 
@@ -138,6 +147,8 @@ void loop() {
 
   if (wifi) 
   {
+    Serial.println("Loop Firmware version: " + String(FIRMWARE_VERSION));
+    checkUpdate();
 
     if (!client.connected()) {
       reconnect();
@@ -273,5 +284,63 @@ void getConfig() {
   }
 }
 
+void checkUpdate(){
+    Serial.println("Checking update");
+    HTTPClient http;
+    String response;
+    String url = UPDATE_URL;
+    http.begin(url);
+    http.GET();
+    response = http.getString();
+    Serial.println(response);
+    StaticJsonDocument<1024> doc;
+    deserializeJson(doc, response);
+    JsonObject obj = doc.as<JsonObject>();
+    String version = obj[String("version")];
+    String url_update = obj[String("url")];
+    Serial.println(version);
+    Serial.println(url_update);
+    if (version.toDouble() > FIRMWARE_VERSION)
+    {
+        Serial.println("Update Available");
+        Serial.println(url_update);
+        if (updateOverHttp(url_update) == HTTP_UPDATE_OK)
+        {
+            Serial.println("Update Success");
+        }
+        else
+        {
+            Serial.println("Update Failed");
+        }
+        Serial.println("Update Success");
+    }
+    else
+    {
+        Serial.println("No Update Available");
+    }
+}
 
+t_httpUpdate_return updateOverHttp(String url_update){
+  t_httpUpdate_return ret;
+
+  if ((WiFi.status() == WL_CONNECTED))
+  {
+    ret = ESPhttpUpdate.update(url_update);
+    switch (ret)
+    {
+    case HTTP_UPDATE_FAILED:
+        Serial.printf("HTTP_UPDATE_FAILD Error (%d): %s", ESPhttpUpdate.getLastError(), ESPhttpUpdate.getLastErrorString().c_str());
+        return ret;
+        break;
+    case HTTP_UPDATE_NO_UPDATES:
+        Serial.println("HTTP_UPDATE_NO_UPDATES");
+        return ret;
+        break;
+    case HTTP_UPDATE_OK:
+        Serial.println("HTTP_UPDATE_OK");
+        return ret;
+        break;
+    }
+  }
+}
 
