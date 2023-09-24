@@ -1,103 +1,277 @@
 #include <WiFi.h>
+#include <ESPAsyncWebSrv.h>
 #include <PubSubClient.h>
+#include <SPIFFS.h>
+#include <ArduinoJson.h>
 
-WiFiClient esp32Client;
-PubSubClient mqttClient(esp32Client);
+// Conectar al wifi "ESP32-Web-Config" y posterior ingresar a 192.168.4.1 para configurar el esp32. 
+char webpage[] PROGMEM = R"=====(
 
-const char* ssid     = "";
-const char* password = "";
-const char* server = ""; // IP de la pc en donde corre docker o pagina del servidor mqtt
-int port = 1883;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configuración WiFi y MQTT</title>
+  <style>
+    body {
+      text-align: center;
+      font-size: 1.2em;
+    }
 
-//int var = 0;
-//char datos[40];
-//String resultS = "";
+    form {
+      display: inline-block;
+      text-align: left;
+    }
 
-// Declaración de funciones.
+    input[type="text"],
+    input[type="password"] {
+      width: calc(100% - 30px);
+      padding: 10px;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+
+    .ver {
+      position: absolute;
+      right: 40px; /* Ajusta la distancia del borde derecho según tu preferencia */
+      top: 35%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      text-decoration: line-through;
+    }
+    
+    input[type="submit"] {
+      background-color: #4caf50;
+      color: white;
+      padding: 10px 20px;
+      font-size: 1em;
+      border: none;
+      cursor: pointer;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+  </style>
+  
+  <script>
+  function togglePassword() {
+    var passwordInput = document.getElementById("password");
+    var ver = document.getElementById("ver");
+
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      ver.style.textDecoration = "none";
+    } else {
+      passwordInput.type = "password";
+      ver.style.textDecoration = "line-through";
+    }
+  }
+</script>
+
+  
+</head>
+<body>
+
+<h2>Configuración WiFi y MQTT</h2>
+
+<form action="/configurar" method="post">
+  WiFi SSID: <input type="text" name="ssid"><br>
+  <div style="position: relative;">
+    WiFi Contraseña: <input type="password" name="password" id="password">
+    <p id="ver" class="ver" onclick="togglePassword()">Ver</p>
+  </div>
+  MQTT Servidor: <input type="text" name="mqtt_server"><br>
+  MQTT Puerto: <input type="text" name="mqtt_port"><br>
+  <input type="submit" value="Guardar">
+</form>
+
+</body>
+</html
+
+)=====";
+
+String ssid = "ESP32-Web-Config";
+String password = "";
+String mqtt_server = "";
+String mqtt_port = "1883";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+AsyncWebServer server(80);
+
+// Declaración de funciones
 void wifiInit();
-//void callback();
+void connectWifiMQTT();
 void reconnect();
+void getConfig();
+void serverGet();
+void serverPost();
 
-void setup()
-{
+void setup() {
+
   Serial.begin(115200);
-  delay(10);
-  wifiInit();
-  mqttClient.setServer(server, port);
-  //mqttClient.setCallback(callback);
+
+  // Inicializar SPIFFS
+  if (!SPIFFS.begin(true)) {
+    Serial.println("An Error has occurred while mounting SPIFFS");
+    return;
+  }
+
+  // Configurar ESP32 como un punto de acceso
+  WiFi.softAP(ssid.c_str(), password.c_str());
+
+  // Configurar Servidor
+  serverGet(); // server.on "/", HTTP_GET, AsyncWebServer
+  serverPost(); // server.on "/configurar", HTTP_POST, AsyncWebServer
+  server.begin(); 
+
+  // Obtenet la informacion en la memoria SPIFFS
+  getConfig();
+  
 }
 
-void loop()
-{
-  if (!mqttClient.connected()) {
-    reconnect();
+void loop() {
+  // put your main code here, to run repeatedly:
+  bool wifi = WiFi.status() == WL_CONNECTED;
+
+  if (wifi) 
+  {
+
+    if (!client.connected()) {
+      reconnect();
+    }
+    
+    client.loop();
+
+    String dato = String(random(45,90));
+    client.publish("casa/living/temp", dato.c_str());
+    Serial.println("Temperatura: " + dato );
+    delay(3000);
+
   }
-  mqttClient.loop();
-
-  if (mqttClient.connected()) {
-
-    String temp = String(random(45,90));
-    mqttClient.publish("casa/living/temp", temp.c_str());
-    Serial.println("Temperatura: " + temp);
-
-  }
-  delay(5000);
 }
 
 void wifiInit() {
-    Serial.print("Conectándose a ");
-    Serial.println(ssid);
+  Serial.println("Conectando a " + ssid);
+  Serial.println("Pass: " + password);
 
-    WiFi.begin(ssid, password);
+  const char* ssid_c = ssid.c_str();
+  const char* password_c = password.c_str();
 
-    while (WiFi.status() != WL_CONNECTED) {
-      Serial.print(".");
-        delay(500);  
-    }
-    Serial.println("");
-    Serial.println("Conectado a WiFi");
-    Serial.println("Dirección IP: ");
-    Serial.println(WiFi.localIP());
-}
+  WiFi.begin(ssid_c, password_c);
 
-/*
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Mensaje recibido [");
-  Serial.print(topic);
-  Serial.print("] ");
-
-  char payload_string[length + 1];
-  
-  int resultI;
-
-  memcpy(payload_string, payload, length);
-  payload_string[length] = '\0';
-  resultI = atoi(payload_string);
-  
-  var = resultI;
-
-  resultS = "";
-  
-  for (int i=0;i<length;i++) {
-    resultS= resultS + (char)payload[i];
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
   }
-  Serial.println();
+  Serial.println("Conectado a la red WiFi");
+  Serial.println(WiFi.localIP());
 }
-*/
+
+void connectWifiMQTT() {
+  wifiInit();
+  client.setServer(mqtt_server.c_str(), mqtt_port.toInt());
+}
 
 void reconnect() {
-  while (!mqttClient.connected()) {
-    Serial.print("Intentando conectarse MQTT...");
+  while (!client.connected()) {
+    Serial.print("Intentando conexión MQTT...");
 
-    if (mqttClient.connect("esp32Client")) {
+    if (client.connect("esp32-client")) {
       Serial.println("Conectado");
-      //mqttClient.subscribe("Entrada/01");
     } else {
-      Serial.print("Fallo, rc=");
-      Serial.print(mqttClient.state());
-      Serial.println(" intentar de nuevo en 5 segundos");
-      // Wait 5 seconds before retrying
+      Serial.print("falló, rc=");
+      Serial.print(client.state());
+      Serial.println(" Intentando de nuevo en 5 segundos");
       delay(5000);
     }
   }
 }
+
+void serverGet() {
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send_P(200, "text/html", webpage);
+  });
+}
+
+void serverPost() {
+  server.on("/configurar", HTTP_POST, [](AsyncWebServerRequest *request){
+    ssid = request->arg("ssid");
+    password = request->arg("password");
+    mqtt_server = request->arg("mqtt_server");
+    mqtt_port = request->arg("mqtt_port");
+
+    Serial.println("Configuración recibida:");
+    Serial.println("SSID: " + ssid);
+    Serial.println("Contraseña: " + password);
+    Serial.println("MQTT Servidor: " + mqtt_server);
+    Serial.println("MQTT Puerto: " + mqtt_port);
+
+    // Guardar los datos en SPIFFS
+    File configFile = SPIFFS.open("/config.json", "w");
+    if (!configFile) {
+      Serial.println("Error al abrir el archivo de configuración");
+    } else {
+      DynamicJsonDocument doc(1024);
+      doc["ssid"] = ssid;
+      doc["password"] = password;
+      doc["mqtt_server"] = mqtt_server;
+      doc["mqtt_port"] = mqtt_port;
+
+      serializeJson(doc, configFile);
+      configFile.close();
+      Serial.println("Configuración guardada correctamente");
+    }
+
+    if (ssid != "null" && ssid.length() > 2) {
+      // Conexion Wifi y MQTT
+      Serial.println("Iniciando Wifi despues de guardar los datos");
+      wifiInit();
+      client.setServer(mqtt_server.c_str(), mqtt_port.toInt());
+    }
+
+    request->send(200, "text/plain", "Configuración guardada correctamente");
+
+  });
+}
+
+void getConfig() {
+  // Intentar cargar la configuración almacenada en SPIFFS
+  File configFile = SPIFFS.open("/config.json", "r");
+  if (configFile) {
+    Serial.println("Leyendo la configuración en SPIFFS");
+
+    size_t size = configFile.size();
+    std::unique_ptr<char[]> buf(new char[size]);
+    configFile.readBytes(buf.get(), size);
+    configFile.close();
+
+    DynamicJsonDocument doc(1024);
+    deserializeJson(doc, buf.get());
+
+    ssid = doc["ssid"].as<String>();
+    password = doc["password"].as<String>();
+    mqtt_server = doc["mqtt_server"].as<String>();
+    mqtt_port = doc["mqtt_port"].as<String>();
+
+    Serial.println("Configuración Leida de SPIFFS:");
+    Serial.println("SSID: " + ssid);
+    Serial.println("Contraseña: " + password);
+    Serial.println("MQTT Servidor: " + mqtt_server);
+    Serial.println("MQTT Puerto: " + mqtt_port);
+
+    // Conexion Wifi y MQTT
+    if (ssid != "null" && ssid.length() > 2) {
+      connectWifiMQTT();
+    }
+    
+  }
+  else{
+      Serial.println("No hay informacion para leer");
+  }
+}
+
+
+
