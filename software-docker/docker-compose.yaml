@@ -32,9 +32,10 @@ services:
     restart: always
     environment:
       - TZ=America/Buenos_Aires
-    expose:
-      - 8883
-      - 9001
+    ports:
+      - 1883:1883
+      - 8883:8883
+      - 9001:9001
     volumes:
       - ./config/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf
   publisher:
