@@ -6,7 +6,7 @@ Este proyecto facilita la automatización de un microcontrolador Esp32 para la c
 
 Implementar el código necesario para configurar un Esp32 con las credenciales de WiFi y de un servidor MQTT a través de una interfaz gráfica. Además, se deberá permitir la actualización remota del firmware del Esp.
 
-El esp32 deberá ser capas de conectarse a la base de datos, alojada en la imagen docker, la cual mostrara los datos enviados mediante MQTT en una pagina web.
+El esp32 deberá ser capaz de conectarse a la base de datos alojada en la imagen docker, la cual mostrara los datos enviados mediante MQTT en una pagina web.
 
 # Instalacion
 
@@ -77,7 +77,9 @@ Para que el Esp32 se actualice debemos subir la nueva versión del firmware. Y e
 
 # Utilización:
 
-Después de instalar el código, el Esp32 iniciara en en modo AP "Access Point", creara una red Wifi con el nombre que tiene asignado en la variable "ssid" en este ejemplo es "ESP32-Web-Config", debemos conectarnos a esta red. Posiblemente nos diga que no tiene conexión a internet, posterior a eso debemos ir a un navegador e ingresar la dirección IP "192:168:4:1" sin comillas.
+Después de instalar el código, el Esp32 iniciara en en modo AP "Access Point", creara una red Wifi de nombre "ESP32Web-" que termina con los ultimos 5 digitos de la dirección MAC del dispositivo. Ejemplo: "ESP32Web-F4:9C".
+
+Una vez visible la red, debemos conectarnos. Posiblemente nos diga que no tiene conexión a internet, posterior a eso debemos ir a un navegador e ingresar la dirección IP "192:168:4:1" sin comillas.
 
 - Librerias utilizadas.
 ```cpp
@@ -86,7 +88,7 @@ Después de instalar el código, el Esp32 iniciara en en modo AP "Access Point",
 ```
 - Variables para almacenar las credenciales.
 ```cpp
-String ssid = "ESP32-Web-Config";
+String ssid = "";
 String password = "";
 String mqtt_server = "";
 String mqtt_port = "1883";
