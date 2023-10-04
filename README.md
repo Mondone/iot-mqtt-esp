@@ -77,7 +77,7 @@ Para que el Esp32 se actualice debemos subir la nueva versión del firmware. Y e
 
 # Utilización:
 
-Después de instalar el código, el Esp32 iniciara en en modo AP "Access Point", creara una red Wifi de nombre "ESP32Web-" que termina con los ultimos 5 digitos de la dirección MAC del dispositivo. Ejemplo: "ESP32Web-F4:9C".
+Después de instalar el código, el Esp32 iniciara en modo AP "Access Point", creara una red Wifi de nombre "ESP32Web-" que termina con los últimos 5 dígitos de la dirección MAC del dispositivo. Ejemplo: "ESP32Web-F4:9C".
 
 Una vez visible la red, debemos conectarnos. Posiblemente nos diga que no tiene conexión a internet, posterior a eso debemos ir a un navegador e ingresar la dirección IP "192:168:4:1" sin comillas.
 
