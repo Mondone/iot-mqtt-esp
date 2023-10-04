@@ -97,14 +97,18 @@ char webpage[] PROGMEM = R"=====(
 
 )=====";
 
-String ssid = "ESP32-Web-Config";
+String ssid = "";
 String password = "";
 String mqtt_server = "";
 String mqtt_port = "1883";
 
+// Flag para controlar version
+bool updateFirmware = false;
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 AsyncWebServer server(80);
+
 
 // Declaración de funciones
 void wifiInit();
@@ -124,6 +128,9 @@ void setup() {
     Serial.println("An Error has occurred while mounting SPIFFS");
     return;
   }
+
+  // Nombre red wifi en modo AP
+  ssid = "ESP32Web-" + (WiFi.macAddress()).substring(12);
 
   // Configurar ESP32 como un punto de acceso
   WiFi.softAP(ssid.c_str(), password.c_str());
@@ -147,8 +154,10 @@ void loop() {
 
   if (wifi) 
   {
-    Serial.println("Loop Firmware version: " + String(FIRMWARE_VERSION));
-    checkUpdate();
+    if (!updateFirmware) {
+      Serial.println("Loop Firmware version: " + String(FIRMWARE_VERSION));
+      checkUpdate();
+    }
 
     if (!client.connected()) {
       reconnect();
@@ -317,6 +326,7 @@ void checkUpdate(){
     else
     {
         Serial.println("No Update Available");
+        updateFirmware = true;
     }
 }
 
