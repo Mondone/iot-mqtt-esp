@@ -1,9 +1,19 @@
 # IoT Mqtt Esp Ota + Docker
 
+# Indice
+1. [Introducción](#introducción)
+2. [Requerimientos](#requerimientos)
+3. [Instalación docker](#docker)
+4. [Instalación esp32](#esp32)
+5. [Actualización](#actualización)
+6. [Utilización](#utilización)
+
+# Introducción
+***
 Este proyecto facilita la automatización de un microcontrolador Esp32 para la conexión mediante MQTT a un servidor local alojado en Docker. El dispositivo se conecta en modo AP, creando una red WiFi. Posteriormente, al acceder a una página web, podemos configurar credenciales la conexión WiFi y MQTT.
 
 # Requerimientos
-
+***
 Implementar el código necesario para configurar un Esp32 con las credenciales de WiFi y de un servidor MQTT a través de una interfaz gráfica. Además, se deberá permitir la actualización remota del firmware del Esp.
 
 El esp32 deberá ser capaz de conectarse a la base de datos alojada en la imagen docker, la cual mostrara los datos enviados mediante MQTT en una pagina web.
@@ -11,11 +21,12 @@ El esp32 deberá ser capaz de conectarse a la base de datos alojada en la imagen
 # Instalacion
 
 ## Docker: 
+***
 ![foto](./img/docker.png)
 - En la carpeta software-docker se encuentra el archivo readme.md, con la descripción de la imagen de docker y su instalación. 
 
 ## Esp32:
-
+***
 [![ESP32](https://img.shields.io/badge/ESP-32-000000.svg?longCache=true&style=flat&colorA=CC101F)](https://www.espressif.com/en/products/socs/esp32)
 [![ESP32](https://img.shields.io/badge/ESP-32S2-000000.svg?longCache=true&style=flat&colorA=CC101F)](https://www.espressif.com/en/products/socs/esp32-s2)
 [![ESP32](https://img.shields.io/badge/ESP-32C3-000000.svg?longCache=true&style=flat&colorA=CC101F)](https://www.espressif.com/en/products/socs/esp32-c3)
@@ -28,7 +39,8 @@ Para la instalacion del codigo en el esp32, utilizaremos el ide de Arduino. http
 Ejemplo Esp32 de 30 pines modelo devkitV1.
 
 
-## Actualización de firmware:
+## Actualización:
+***
 
 El firmware se actualiza mediante OTA vía http, por lo tanto antes de instalar el código en nuestro esp32, debemos crear un repositorio en github o algún servidor donde alojar los archivos necesarios para la actualización.
 
@@ -76,6 +88,7 @@ Para que el Esp32 se actualice debemos subir la nueva versión del firmware. Y e
 
 
 # Utilización:
+***
 
 Después de instalar el código, el Esp32 iniciara en modo AP "Access Point", creara una red Wifi de nombre "ESP32Web-" que termina con los últimos 5 dígitos de la dirección MAC del dispositivo. Ejemplo: "ESP32Web-F4:9C".
 
